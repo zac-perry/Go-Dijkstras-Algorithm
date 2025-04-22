@@ -1,6 +1,12 @@
-// Zachary Perry
-// ECE 569 -- Computer Networks Assignment 4
-// 4/24/25
+/*
+ * Zachary Perry
+ * ECE 553 -- Computer Networks Assignment 4
+ * 4/24/25
+ *
+ * Purpose of this program is to implement Dijkstra's shortest path algorithm.
+ * The goal is to find the shortest path in an undirected, weighted graph
+ */
+
 package main
 
 import (
@@ -66,7 +72,16 @@ func (graph *Graph) AddEdge(v1, v2, weight int) {
 	graph.edges[v2] = append(graph.edges[v2], backward)
 }
 
-func dijkstras() {}
+func outputShortestPath() {}
+
+func dijkstras() {
+	/*
+			* TODO:
+		  * - [ ] shortest distance from source to all other vertices (including source->source i guess)
+		  *     - If unreachable, print INF
+		  * - [ ] save the actual path of nodes from the source to target. Output this path
+	*/
+}
 
 func readFile(fileName string) (*Graph, int) {
 	file, err := os.Open(fileName)
@@ -166,7 +181,7 @@ func main() {
 
 	// read in the graph
 	fileName := os.Args[1]
-	//graph, source := readFile(fileName)
+	// graph, source := readFile(fileName)
 	_, source := readFile(fileName)
 	fmt.Print("Source: ", source)
 }

@@ -32,6 +32,7 @@ In addition to computing the shortest distances, also output the actual shortest
 - [x] reading in the graph via DIMACS format (same as 581) 
 - [ ] shortest distance from source to all vertices
 - [ ] shortest path from the source to each reachable node. If multiple exist, just print one
+- [ ] Test on the hydra machine to make sure it works (grading purposes)
 
 NOTE: 
 - Input here is slightly different. The last number in the file is the source
