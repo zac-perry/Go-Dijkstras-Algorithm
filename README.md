@@ -15,8 +15,7 @@ A makefile is included here for compiling.
 
 *NOTE: I have provided input file examples in the input directory for use.*
 
-### Question 3
----
+## Question 3
 Write a program that reads a weighted undirected graph and a source vertex, then computes the shortest distances from the source to all other vertices using Dijkstra’s algorithm
 
 *Input format*
