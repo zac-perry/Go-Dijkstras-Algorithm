@@ -1,5 +1,5 @@
 # Zachary Perry
-# compiles problem_1 and problem_2 into respective bin/ files
+# Compiles the given code for problem 3. 
 .DEFAULT_GOAL := build
 
 fmt: 

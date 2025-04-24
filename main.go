@@ -4,7 +4,7 @@
  * 4/24/25
  *
  * Purpose of this program is to implement Dijkstra's shortest path algorithm.
- * The goal is to find the shortest path in an undirected, weighted graph
+ * The goal is to find the shortest path in an undirected, weighted graph.
  */
 
 package main
@@ -23,9 +23,8 @@ import (
 
 /*
  * Graph struct will represent all edges and nodes.
- * TODO: UPDATE THIS COMMENT
- * Key in the map       -> vertex value.
- * Val for each vertex  -> list of edges.
+ * nodes -> map containing all nodes in the Graph. (key: node value, val: node)
+ * edges -> map containing all edges in the Graph. (Adj list, key: node value, val: edge)
  */
 type Graph struct {
 	nodes map[int]*Node
@@ -34,10 +33,10 @@ type Graph struct {
 
 /*
  * Node struct will represent each node in the graph.
- * Value      -> vertex value.
- * Distance   -> Distance from the source node.
- * Visited    -> If the node has been visited yet.
- * PrevNode   -> Tracks the previous node visited to get to the
+ * value      -> Node value.
+ * distance   -> Distance from the source node.
+ * visited    -> If the node has been visited yet.
+ * prevNode   -> Tracks the previous node visited to get to the
  *               current node (to track the actual path).
  */
 type Node struct {
@@ -48,9 +47,9 @@ type Node struct {
 }
 
 /*
- * Edge struct represents an individual edge.
- * to       -> destination vertex, where this edge goes to.
- * capacity -> weight of the edge, capacity that can flow through it.
+ * Edge struct represents an individual edge for the adj list.
+ * to     -> tracks the node this edge goes to.
+ * weight -> weight of the edge, capacity that can flow through it.
  */
 type Edge struct {
 	to     int
@@ -58,8 +57,8 @@ type Edge struct {
 }
 
 /*
- * Min Priority Queue implementation using Go's min heap interface
- * NOTE: These functions are just fulfilling the interface.
+ * Min Priority Queue implementation using Go's min heap interface.
+ * NOTE: In Go, you must fulfill the interface and implement each function.
  */
 type PriorityQueue []*Node
 
@@ -80,18 +79,18 @@ func (queue *PriorityQueue) Push(x any) {
 }
 
 func (queue *PriorityQueue) Pop() any {
-	placeholder := *queue
-	length := len(placeholder)
-	value := placeholder[length-1]
-	*queue = placeholder[0 : length-1]
+	temp := *queue
+	length := len(temp)
+	value := temp[length-1]
+	*queue = temp[0 : length-1]
 
 	return value
 }
 
 /*
  * NewGraph() just creates a new graph instance.
- * The map will hold vertex values as the keys and their outgoing edges in a slice as the val.
- * NOTE: the edges slice for each vertex will also contain any backwards edges.
+ * Initializes the nodes and edges maps.
+ * NOTE: the edges slice for each node will also contain any backwards edges.
  */
 func NewGraph(nodeCount int) *Graph {
 	graph := &Graph{
@@ -107,7 +106,8 @@ func NewGraph(nodeCount int) *Graph {
 }
 
 /*
- *
+ * AddNode() will initialize/add a new node to the Graph if it doesn't exist.
+ * NOTE: The distance is initialized to inf to start.
  */
 func (graph *Graph) AddNode(value int) {
 	_, exists := graph.nodes[value]
@@ -125,38 +125,45 @@ func (graph *Graph) AddNode(value int) {
 }
 
 /*
- * TODO: UPDATE COMMENTS
- * AddEdge() will add an edge from v1 to v2 with the specified weight as the capacity to the graph.
- * Additionally, it also adds a backwards edge (with 0 capacity).
+ * AddEdge() will add an edge from node1 to node2 with the specified weight to the graph.
+ * Additionally, it also adds a backwards edge (since the graph is assumed to be undirected).
  */
-func (graph *Graph) AddEdge(v1, v2, weight int) {
-	// Forward edge (v1 -> v2).
+func (graph *Graph) AddEdge(node1, node2, weight int) {
 	forward := &Edge{
-		to:     v2,
+		to:     node2,
 		weight: weight,
 	}
 
-	// Backward edge (v2 -> v1).
 	backward := &Edge{
-		to:     v1,
+		to:     node1,
 		weight: weight,
 	}
 
 	// Append to respective node Edge slice.
-	graph.edges[v1] = append(graph.edges[v1], forward)
-	graph.edges[v2] = append(graph.edges[v2], backward)
+	graph.edges[node1] = append(graph.edges[node1], forward)
+	graph.edges[node2] = append(graph.edges[node2], backward)
 }
 
+/*
+ * Dijkstras() implements Dijkstras algorithm to find the shortest path from the source
+ *             to each node in the graph.
+ * NOTE: As previously mentioned, this is using a priority queue built from Go's heap interface.
+ */
 func (graph *Graph) Dijkstras(source int) {
-	// Set the source node distance to 0 (was initalized to inf to start)
+	// Set the source node distance to 0 (was initalized to inf to start).
 	sourceNode := graph.nodes[source]
 	sourceNode.distance = 0
 
-	// NOTE: again, this is just instantiating the Priority Queue using the heap interface
+	// Create the priority queue and add the source.
 	pqueue := &PriorityQueue{}
 	heap.Init(pqueue)
-	heap.Push(pqueue, graph.nodes[source])
+	heap.Push(pqueue, sourceNode)
 
+	/*
+	 * Pop a node off the queue to process.
+	 * If it hasn't been visited, then process the neighbors that have also not been visited.
+	 * Check and update distances, add the neighbor to the queue if distance was updated.
+	 */
 	for pqueue.Len() != 0 {
 		currNode := heap.Pop(pqueue).(*Node)
 
@@ -166,7 +173,7 @@ func (graph *Graph) Dijkstras(source int) {
 
 		currNode.visited = true
 
-		// process the neighbors of this current node.
+		// Process the neighbors of this current node using adj list.
 		for _, edge := range graph.edges[currNode.value] {
 			neighbor := graph.nodes[edge.to]
 
@@ -187,104 +194,108 @@ func (graph *Graph) Dijkstras(source int) {
 }
 
 /*
- * ReadFile() -- Read in the file based on modified DIMACS format
- * Ending value is the source node
+ * ReadFile() -- Read in the file based on modified DIMACS format (provided in assignment).
+ * NOTE: Ending value in the file specifies the source node.
  */
 func ReadFile(fileName string) (*Graph, int) {
 	file, err := os.Open(fileName)
 	if err != nil {
-		log.Fatal("Error opening the file")
+		log.Fatal("ReadFile(): Error opening the file")
 	}
 
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	if !scanner.Scan() {
-		log.Fatal("readFile(): Issue scanning the file -- may be empty..")
+		log.Fatal("ReadFile(): Issue scanning the file -- may be empty..")
 	}
 
 	// First row (2 values) -> node count and then the edge count.
 	firstLine := strings.Fields(scanner.Text())
 	if len(firstLine) < 2 || len(firstLine) > 2 {
 		log.Fatal(
-			"readFile(): Error parsing the first line -- either too few arguments or too many. Should only include node count and edge count",
+			"ReadFile(): Error parsing the first line -- either too few arguments or too many.",
 		)
 	}
 
 	nodeCount, err := strconv.Atoi(firstLine[0])
 	if err != nil {
-		log.Fatal("readFile(): Error reading in the nodeCount")
+		log.Fatal("ReadFile(): Error reading in the nodeCount")
 	}
 
 	edgeCount, err := strconv.Atoi(firstLine[1])
 	if err != nil {
-		log.Fatal("readFile(): Error reading in the edgeCount")
+		log.Fatal("ReadFile(): Error reading in the edgeCount")
 	}
 
 	graph := NewGraph(nodeCount)
 	source := 0
-	edgereadCount := 1
+	edgeReadCount := 1
 
+	// Initialize nodes.
 	for i := 1; i <= nodeCount; i++ {
 		graph.AddNode(i)
 	}
 
-	// Read in the remaining rows containing the edges (v1, v2, arc weight).
+	// Read in the edges + weights & the specified source node.
 	for scanner.Scan() {
 
 		line := strings.Fields(scanner.Text())
 
 		// NOTE: Last value is the source.
-		if edgereadCount > edgeCount {
+		if edgeReadCount > edgeCount {
 			source, err = strconv.Atoi(line[0])
 			if err != nil {
-				log.Fatal("readFile(): Error reading in the last value (source)")
+				log.Fatal("ReadFile(): Error reading in the last value (source)")
 			}
 
 			break
 		}
 
 		if len(line) < 3 || len(line) > 3 {
-			log.Fatal("readFile(): vertex and weight row either has too few or too many arguments")
+			log.Fatal("ReadFile(): edge row either has too few or too many arguments")
 		}
 
-		v1, err := strconv.Atoi(line[0])
+		node1, err := strconv.Atoi(line[0])
 		if err != nil {
-			log.Fatal("readFile(): Error reading in v1")
+			log.Fatal("ReadFile(): Error reading in node1")
 		}
 
-		v2, err := strconv.Atoi(line[1])
+		node2, err := strconv.Atoi(line[1])
 		if err != nil {
-			log.Fatal("readFile(): Error reading in the v2")
+			log.Fatal("ReadFile(): Error reading in the node2")
 		}
 
 		weight, err := strconv.Atoi(line[2])
 		if err != nil {
-			log.Fatal("readFile(): Error reading in the weight")
+			log.Fatal("ReadFile(): Error reading in the weight")
 		}
 
-		graph.AddEdge(v1, v2, weight)
-		edgereadCount++
+		graph.AddEdge(node1, node2, weight)
+		edgeReadCount++
 	}
 
 	return graph, source
 }
 
 /*
+ * PrintDistanceAndPaths() just prints out the path info (distance, actual path).
  */
 func (graph *Graph) PrintDistanceAndPaths(source int) {
 	// NOTE: Sorting the map keys here bc Go doesn't auto sort the map :(
+	// Done so that I can output everything in sorted order.
 	sortedKeys := make([]int, 0)
+
 	for i := range graph.nodes {
 		sortedKeys = append(sortedKeys, i)
 	}
 	sort.Ints(sortedKeys)
 
-	// Loop over the sorted key and output node info
-	// Traversing backwards through each node to get their paths
+	// Loop over the sorted keys and output node info.
 	for _, key := range sortedKeys {
 		node := graph.nodes[key]
 		fmt.Printf("%-3d: ", key)
+
 		if node.distance == math.MaxInt32 {
 			fmt.Printf("Distance = INF , ")
 		} else {
@@ -301,9 +312,10 @@ func (graph *Graph) PrintDistanceAndPaths(source int) {
 			continue
 		}
 
-		// loop here through prev nodes to build the path
+		// Loop through the prevNodes for the current node, building the path found.
 		currPath := make([]int, 0)
 		tempNode := node
+
 		for {
 			if tempNode == nil {
 				break
@@ -314,6 +326,7 @@ func (graph *Graph) PrintDistanceAndPaths(source int) {
 		}
 
 		fmt.Printf("Path = ")
+
 		for i, val := range currPath {
 			if i+1 == len(currPath) {
 				fmt.Printf("%d\n", val)
