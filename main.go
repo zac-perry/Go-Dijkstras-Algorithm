@@ -11,12 +11,14 @@ package main
 
 import (
 	"bufio"
+	"container/heap"
 	"fmt"
 	"log"
+	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
-  "container/heap"
 )
 
 /*
@@ -91,25 +93,29 @@ func (queue *PriorityQueue) Pop() any {
  * The map will hold vertex values as the keys and their outgoing edges in a slice as the val.
  * NOTE: the edges slice for each vertex will also contain any backwards edges.
  */
-func NewGraph(vertexCount int) *Graph {
+func NewGraph(nodeCount int) *Graph {
 	graph := &Graph{
 		nodes: make(map[int]*Node),
 		edges: make(map[int][]*Edge),
 	}
 
-	for i := range vertexCount {
+	for i := 1; i <= nodeCount; i++ {
 		graph.edges[i] = []*Edge{}
 	}
 
 	return graph
 }
 
+/*
+ *
+ */
 func (graph *Graph) AddNode(value int) {
 	_, exists := graph.nodes[value]
+
 	if !exists {
 		node := &Node{
 			value:    value,
-			distance: 0,
+			distance: math.MaxInt32,
 			visited:  false,
 			prevNode: nil,
 		}
@@ -133,44 +139,58 @@ func (graph *Graph) AddEdge(v1, v2, weight int) {
 	// Backward edge (v2 -> v1).
 	backward := &Edge{
 		to:     v1,
-		weight: 0,
+		weight: weight,
 	}
 
-	// Append to respective vertex Edge slice.
+	// Append to respective node Edge slice.
 	graph.edges[v1] = append(graph.edges[v1], forward)
 	graph.edges[v2] = append(graph.edges[v2], backward)
 }
 
-func outputShortestPath() {}
+func (graph *Graph) Dijkstras(source int) {
+	// Set the source node distance to 0 (was initalized to inf to start)
+	sourceNode := graph.nodes[source]
+	sourceNode.distance = 0
 
-func dijkstras() {
-	/*
-			* TODO:
-		  * - [ ] shortest distance from source to all other vertices (including source->source i guess)
-		  *     - If unreachable, print INF
-		  * - [ ] save the actual path of nodes from the source to target. Output this path
-	*/
+	// NOTE: again, this is just instantiating the Priority Queue using the heap interface
+	pqueue := &PriorityQueue{}
+	heap.Init(pqueue)
+	heap.Push(pqueue, graph.nodes[source])
 
-	/*
-	 * Visited -- if node has been visited yet
-	 * SavedPath -- tracks the path to each node from the source
-	 *    - Also tracks the total distance count (number of nodes in the path)
-	 */
-	visited := make(map[int]bool)
-	savedPath := make(map[int]int)
+	for pqueue.Len() != 0 {
+		currNode := heap.Pop(pqueue).(*Node)
 
-	log.Print(visited, savedPath)
+		if currNode.visited {
+			continue
+		}
 
-  // NOTE: again, this is just instantiating the Priority Queue using the heap interface
-  priorityQueue := make(PriorityQueue, 0)
-  heap.Init(&priorityQueue)
+		currNode.visited = true
+
+		// process the neighbors of this current node.
+		for _, edge := range graph.edges[currNode.value] {
+			neighbor := graph.nodes[edge.to]
+
+			if neighbor.visited {
+				continue
+			}
+
+			currentDistance := currNode.distance + edge.weight
+
+			if currentDistance < neighbor.distance {
+				neighbor.distance = currentDistance
+				neighbor.prevNode = currNode
+
+				heap.Push(pqueue, neighbor)
+			}
+		}
+	}
 }
 
 /*
- * readFile() -- Read in the file based on modified DIMACS format
- * Ending value is the source vertex
+ * ReadFile() -- Read in the file based on modified DIMACS format
+ * Ending value is the source node
  */
-func readFile(fileName string) (*Graph, int) {
+func ReadFile(fileName string) (*Graph, int) {
 	file, err := os.Open(fileName)
 	if err != nil {
 		log.Fatal("Error opening the file")
@@ -183,17 +203,17 @@ func readFile(fileName string) (*Graph, int) {
 		log.Fatal("readFile(): Issue scanning the file -- may be empty..")
 	}
 
-	// First row (2 values) -> vertex count and then the edge count.
+	// First row (2 values) -> node count and then the edge count.
 	firstLine := strings.Fields(scanner.Text())
 	if len(firstLine) < 2 || len(firstLine) > 2 {
 		log.Fatal(
-			"readFile(): Error parsing the first line -- either too few arguments or too many. Should only include vertex count and edge count",
+			"readFile(): Error parsing the first line -- either too few arguments or too many. Should only include node count and edge count",
 		)
 	}
 
-	vertexCount, err := strconv.Atoi(firstLine[0])
+	nodeCount, err := strconv.Atoi(firstLine[0])
 	if err != nil {
-		log.Fatal("readFile(): Error reading in the vertexCount")
+		log.Fatal("readFile(): Error reading in the nodeCount")
 	}
 
 	edgeCount, err := strconv.Atoi(firstLine[1])
@@ -201,9 +221,13 @@ func readFile(fileName string) (*Graph, int) {
 		log.Fatal("readFile(): Error reading in the edgeCount")
 	}
 
-	graph := NewGraph(vertexCount)
+	graph := NewGraph(nodeCount)
 	source := 0
 	edgereadCount := 1
+
+	for i := 1; i <= nodeCount; i++ {
+		graph.AddNode(i)
+	}
 
 	// Read in the remaining rows containing the edges (v1, v2, arc weight).
 	for scanner.Scan() {
@@ -239,37 +263,65 @@ func readFile(fileName string) (*Graph, int) {
 			log.Fatal("readFile(): Error reading in the weight")
 		}
 
-		// Add the nodes and the edges (both forward and backward)
-		graph.AddNode(v1)
-		graph.AddNode(v2)
 		graph.AddEdge(v1, v2, weight)
 		edgereadCount++
 	}
 
-	fmt.Println("-----NODES-----")
-	for key, val := range graph.nodes {
-		fmt.Println("Node ----- ", key)
-		fmt.Println("     Val: ", val)
+	return graph, source
+}
+
+/*
+ */
+func (graph *Graph) PrintDistanceAndPaths(source int) {
+	// NOTE: Sorting the map keys here bc Go doesn't auto sort the map :(
+	sortedKeys := make([]int, 0)
+	for i := range graph.nodes {
+		sortedKeys = append(sortedKeys, i)
 	}
+	sort.Ints(sortedKeys)
 
-	fmt.Println("-----------------------")
+	// Loop over the sorted key and output node info
+	// Traversing backwards through each node to get their paths
+	for _, key := range sortedKeys {
+		node := graph.nodes[key]
+		fmt.Printf("%-3d: ", key)
+		if node.distance == math.MaxInt32 {
+			fmt.Printf("Distance = INF , ")
+		} else {
+			fmt.Printf("Distance = %-4d, ", node.distance)
+		}
 
-	// Print, remove any empty verticies
-	// TODO: do this in a less lame way -- might accidentally remove vertices that are valid
-	for key, val := range graph.edges {
-		if len(val) == 0 {
-			delete(graph.edges, key)
+		if node.value == source && node.prevNode == nil {
+			fmt.Printf("Path = %d\n", node.value)
 			continue
 		}
 
-		fmt.Println("Key: ", key)
+		if node.distance == math.MaxInt32 {
+			fmt.Printf("Path = nil, no valid path\n")
+			continue
+		}
 
-		for _, w := range val {
-			fmt.Println(" Edge to: ", w.to)
+		// loop here through prev nodes to build the path
+		currPath := make([]int, 0)
+		tempNode := node
+		for {
+			if tempNode == nil {
+				break
+			}
+
+			currPath = append([]int{tempNode.value}, currPath...)
+			tempNode = tempNode.prevNode
+		}
+
+		fmt.Printf("Path = ")
+		for i, val := range currPath {
+			if i+1 == len(currPath) {
+				fmt.Printf("%d\n", val)
+			} else {
+				fmt.Printf("%d -> ", val)
+			}
 		}
 	}
-
-	return graph, source
 }
 
 func main() {
@@ -277,9 +329,8 @@ func main() {
 		log.Fatal("usage: ./bin/main filename")
 	}
 
-	// read in the graph
 	fileName := os.Args[1]
-	// graph, source := readFile(fileName)
-	_, source := readFile(fileName)
-	fmt.Print("Source: ", source)
+	graph, source := ReadFile(fileName)
+	graph.Dijkstras(source)
+	graph.PrintDistanceAndPaths(source)
 }
