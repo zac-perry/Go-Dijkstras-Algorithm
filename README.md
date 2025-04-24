@@ -16,6 +16,7 @@ A makefile is included here for compiling.
 *NOTE: I have provided input file examples in the input directory for use.*
 
 ### Question 3
+---
 Write a program that reads a weighted undirected graph and a source vertex, then computes the shortest distances from the source to all other vertices using Dijkstra’s algorithm
 
 *Input format*
@@ -57,3 +58,8 @@ In addition to computing the shortest distances, also output the actual shortest
 4: Distance = 7, Path = 1 -> 2 -> 3 -> 5 -> 4
 5: Distance = 6, Path = 1 -> 2 -> 3 -> 5
 ```
+
+### Sources Used
+- [Wiki](https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm)
+- [Class Slides (Chapter 5)](https://gaia.cs.umass.edu/kurose_ross/ppt.php)
+- [Go Heap Interface](https://pkg.go.dev/container/heap)
