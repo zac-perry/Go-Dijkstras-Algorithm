@@ -18,28 +18,50 @@ import (
 	"strings"
 )
 
-// Graph struct will represent all edges.
-// Key in the map       -> vertex value.
-// Val for each vertex  -> list of edges.
+/*
+ * Graph struct will represent all edges and nodes.
+ * TODO: UPDATE THIS COMMENT
+ * Key in the map       -> vertex value.
+ * Val for each vertex  -> list of edges.
+ */
 type Graph struct {
+	nodes map[int]*Node
 	edges map[int][]*Edge
 }
 
-// Edge struct represents an individual edge.
-// to       -> destination vertex, where this edge goes to.
-// capacity -> weight of the edge, capacity that can flow through it.
-// flow     -> what is currently flowing through the edge.
-type Edge struct {
-	to       int
-	capacity int
-	flow     int
+/*
+ * Node struct will represent each node in the graph.
+ * Value      -> vertex value.
+ * Distance   -> Distance from the source node.
+ * Visited    -> If the node has been visited yet.
+ * PrevNode   -> Tracks the previous node visited to get to the
+ *               current node (to track the actual path).
+ */
+type Node struct {
+	value    int
+	distance int
+	visited  bool
+	prevNode *Node
 }
 
-// NewGraph() just creates a new graph instance.
-// The map will hold vertex values as the keys and their outgoing edges in a slice as the val.
-// NOTE: the edges slice for each vertex will also contain any backwards edges.
+/*
+ * Edge struct represents an individual edge.
+ * to       -> destination vertex, where this edge goes to.
+ * capacity -> weight of the edge, capacity that can flow through it.
+ */
+type Edge struct {
+	to     int
+	weight int
+}
+
+/*
+ * NewGraph() just creates a new graph instance.
+ * The map will hold vertex values as the keys and their outgoing edges in a slice as the val.
+ * NOTE: the edges slice for each vertex will also contain any backwards edges.
+ */
 func NewGraph(vertexCount int) *Graph {
 	graph := &Graph{
+		nodes: make(map[int]*Node),
 		edges: make(map[int][]*Edge),
 	}
 
@@ -50,21 +72,36 @@ func NewGraph(vertexCount int) *Graph {
 	return graph
 }
 
-// AddEdge() will add an edge from v1 to v2 with the specified weight as the capacity to the graph.
-// Additionally, it also adds a backwards edge (with 0 capacity).
+func (graph *Graph) AddNode(value int) {
+	_, exists := graph.nodes[value]
+	if !exists {
+		node := &Node{
+			value:    value,
+			distance: 0,
+			visited:  false,
+			prevNode: nil,
+		}
+
+		graph.nodes[value] = node
+	}
+}
+
+/*
+ * TODO: UPDATE COMMENTS
+ * AddEdge() will add an edge from v1 to v2 with the specified weight as the capacity to the graph.
+ * Additionally, it also adds a backwards edge (with 0 capacity).
+ */
 func (graph *Graph) AddEdge(v1, v2, weight int) {
 	// Forward edge (v1 -> v2).
 	forward := &Edge{
-		to:       v2,
-		capacity: weight,
-		flow:     0,
+		to:     v2,
+		weight: weight,
 	}
 
 	// Backward edge (v2 -> v1).
 	backward := &Edge{
-		to:       v1,
-		capacity: 0,
-		flow:     0,
+		to:     v1,
+		weight: 0,
 	}
 
 	// Append to respective vertex Edge slice.
@@ -81,8 +118,24 @@ func dijkstras() {
 		  *     - If unreachable, print INF
 		  * - [ ] save the actual path of nodes from the source to target. Output this path
 	*/
+
+	/*
+	 * Visited -- if node has been visited yet
+	 * SavedPath -- tracks the path to each node from the source
+	 *    - Also tracks the total distance count (number of nodes in the path)
+	 */
+	visited := make(map[int]bool)
+	savedPath := make(map[int]int)
+
+	log.Print(visited, savedPath)
+
+	// TODO: need min heap, take from 581 lab
 }
 
+/*
+ * readFile() -- Read in the file based on modified DIMACS format
+ * Ending value is the source vertex
+ */
 func readFile(fileName string) (*Graph, int) {
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -152,12 +205,23 @@ func readFile(fileName string) (*Graph, int) {
 			log.Fatal("readFile(): Error reading in the weight")
 		}
 
-		// Create and add edge to the graph (both forward and backward)
+		// Add the nodes and the edges (both forward and backward)
+		graph.AddNode(v1)
+		graph.AddNode(v2)
 		graph.AddEdge(v1, v2, weight)
 		edgereadCount++
 	}
 
+	fmt.Println("-----NODES-----")
+	for key, val := range graph.nodes {
+		fmt.Println("Node ----- ", key)
+		fmt.Println("     Val: ", val)
+	}
+
+	fmt.Println("-----------------------")
+
 	// Print, remove any empty verticies
+	// TODO: do this in a less lame way -- might accidentally remove vertices that are valid
 	for key, val := range graph.edges {
 		if len(val) == 0 {
 			delete(graph.edges, key)
@@ -167,7 +231,7 @@ func readFile(fileName string) (*Graph, int) {
 		fmt.Println("Key: ", key)
 
 		for _, w := range val {
-			fmt.Println("Edge to: ", w.to)
+			fmt.Println(" Edge to: ", w.to)
 		}
 	}
 

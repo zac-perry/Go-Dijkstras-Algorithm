@@ -33,6 +33,7 @@ In addition to computing the shortest distances, also output the actual shortest
 - [ ] shortest distance from source to all vertices
 - [ ] shortest path from the source to each reachable node. If multiple exist, just print one
 - [ ] Test on the hydra machine to make sure it works (grading purposes)
+- [ ] Update Documentation + comments for functions
 
 NOTE: 
 - Input here is slightly different. The last number in the file is the source
