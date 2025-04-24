@@ -16,6 +16,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+  "container/heap"
 )
 
 /*
@@ -52,6 +53,37 @@ type Node struct {
 type Edge struct {
 	to     int
 	weight int
+}
+
+/*
+ * Min Priority Queue implementation using Go's min heap interface
+ * NOTE: These functions are just fulfilling the interface.
+ */
+type PriorityQueue []*Node
+
+func (queue PriorityQueue) Len() int {
+	return len(queue)
+}
+
+func (queue PriorityQueue) Less(i, j int) bool {
+	return queue[i].distance < queue[j].distance
+}
+
+func (queue PriorityQueue) Swap(i, j int) {
+	queue[i], queue[j] = queue[j], queue[i]
+}
+
+func (queue *PriorityQueue) Push(x any) {
+	*queue = append(*queue, x.(*Node))
+}
+
+func (queue *PriorityQueue) Pop() any {
+	placeholder := *queue
+	length := len(placeholder)
+	value := placeholder[length-1]
+	*queue = placeholder[0 : length-1]
+
+	return value
 }
 
 /*
@@ -129,7 +161,9 @@ func dijkstras() {
 
 	log.Print(visited, savedPath)
 
-	// TODO: need min heap, take from 581 lab
+  // NOTE: again, this is just instantiating the Priority Queue using the heap interface
+  priorityQueue := make(PriorityQueue, 0)
+  heap.Init(&priorityQueue)
 }
 
 /*
