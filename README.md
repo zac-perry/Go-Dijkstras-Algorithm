@@ -4,14 +4,17 @@ Contains code for problem 3 on assignment 4.
 Zachary Perry, 4/24/25
 
 ## Requirements
-*Go version 1.22.9* - This is the version of Go installed on the Hydra/Tesla machines. As such, this assingment is written in this version.
+`Go version 1.22.9`
+This is the version of Go installed on the Hydra/Tesla machines. As such, this assignment is written in this version.
 
 ## How to Run
 A makefile is included here for compiling. 
 
-**To Compile**: `make`
+**To Compile**:
+`make`
 
-**To Run**: `./bin/main inputFileName`
+**To Run**:
+`./bin/main inputFileName`
 
 *NOTE: I have provided input file examples in the input directory for use.*
 
